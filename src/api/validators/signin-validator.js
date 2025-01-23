@@ -1,29 +1,34 @@
-import Joi from "joi";
+import { z } from "zod";
 
-const userSchema = Joi.object({
-    email: Joi.string().email().required().messages({
-        "string.email": "Please provide a valid email",
-        "any.required": "Email is required",
-    }),
+const userSchema = z.object({
+    email: z
+        .string()
+        .email({ message: "Please provide a valid email" })
+        .nonempty({ message: "Email is required" }),
 
-    password: Joi.string().min(8).required().messages({
-        "string.base": "Password should be text",
-        "string.min": "Password should be at least 8 characters long",
-        "any.required": "Password is required",
-    }),
+    password: z
+        .string()
+        .min(8, { message: "Password should be at least 8 characters long" })
+        .nonempty({ message: "Password is required" }),
 });
 
 const signinValidator = (req, res, next) => {
-    const { error } = userSchema.validate(req.body, { abortEarly: false });
+    try {
+        userSchema.parse(req.body);
+        next();
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            const formattedErrors = error.errors.reduce((acc, curr) => {
+                acc[curr.path.join(".")] = curr.message;
+                return acc;
+            }, {});
 
-    if (error) {
-        const formattedErrors = error.details.map((err) => ({
-            [err.path.join(".")]: err.message,
-        }));
-        return res.apiError({error:formattedErrors});
+            return res.apiError({ error: formattedErrors });
+        }
+
+        // If an unexpected error occurs, pass it to the error handler
+        next(error);
     }
-
-    next();
 };
 
 export { signinValidator };

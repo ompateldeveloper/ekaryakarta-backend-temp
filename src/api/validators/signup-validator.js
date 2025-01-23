@@ -1,37 +1,46 @@
-import Joi from "joi";
+import { z } from "zod";
 
-const userSchema = Joi.object({
-    name: Joi.string().min(2).max(30).required().messages({
-        "string.base": "Name should be a type of text",
-        "string.empty": "Name cannot be empty",
-        "string.min": "Name should be at least 2\ characters long",
-        "string.max": "Name should not exceed 30 characters",
-        "any.required": "Name is required",
-    }),
+const userSchema = z.object({
+    fname: z
+        .string()
+        .min(2, { message: "First name should be at least 2 characters long" })
+        .max(30, { message: "First name should not exceed 30 characters" })
+        .nonempty({ message: "First name cannot be empty" }),
 
-    email: Joi.string().email().required().messages({
-        "string.email": "Please provide a valid email",
-        "any.required": "Email is required",
-    }),
+    lname: z
+        .string()
+        .min(2, { message: "Last name should be at least 2 characters long" })
+        .max(30, { message: "Last name should not exceed 30 characters" })
+        .nonempty({ message: "Last name cannot be empty" }),
 
-    password: Joi.string().min(8).required().messages({
-        "string.base": "Password should be text",
-        "string.min": "Password should be at least 8 characters long",
-        "any.required": "Password is required",
-    }),
+    email: z
+        .string()
+        .email({ message: "Please provide a valid email" })
+        .nonempty({ message: "Email is required" }),
+
+    password: z
+        .string()
+        .min(8, { message: "Password should be at least 8 characters long" })
+        .nonempty({ message: "Password is required" }),
 });
 
 const signupValidator = (req, res, next) => {
-    const { error } = userSchema.validate(req.body, { abortEarly: false });
+    try {
+        userSchema.parse(req.body);
+        next();
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            const formattedErrors = error.errors.reduce((acc, curr) => {
+                acc[curr.path.join(".")] = curr.message;
+                return acc;
+            }, {});
 
-    if (error) {
-        const formattedErrors = error.details.map((err) => ({
-            [err.path.join(".")]: err.message,
-        }));
-        return res.apiError({error:formattedErrors});
+            return res.apiError({ error: formattedErrors });
+        }
+
+        // If an unexpected error occurs, pass it to the error handler
+        next(error);
     }
-
-    next();
 };
 
 export { signupValidator };

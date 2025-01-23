@@ -18,11 +18,11 @@ const authController = {
             }
 
             const token = generateToken(user);
-
+            
             const sanitizedUser = sanitizeUser(user);
-            res.cookie("admin", sanitizedUser.admin, { httpOnly: true, secure: false, sameSite: "Lax", maxAge: 1000 * 60 * 60 * 24 });
+            res.cookie("admin", sanitizedUser.role!=="USER", { httpOnly: true, secure: false, sameSite: "Lax", maxAge: 1000 * 60 * 60 * 24 });
             res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "Lax", maxAge: 1000 * 60 * 60 * 24 });
-            return res.apiSuccess({ data: sanitizedUser, message: "Authenticated" });
+            return res.apiSuccess({ data: { ...sanitizedUser, token }, message: "Authenticated" });
         } catch (error) {
             return res.apiError({ message, message: "server error" });
         }
@@ -34,7 +34,6 @@ const authController = {
                 email: body.email,
             },
         });
-
         if (exists) {
             return res.apiError({ message: "User Already Exists", status: 403 });
         }
@@ -51,7 +50,7 @@ const authController = {
             const sanitizedUser = sanitizeUser(user);
             res.cookie("admin", sanitizedUser.admin, { httpOnly: true, secure: false, sameSite: "Lax", maxAge: 3600000 });
             res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "Lax", maxAge: 3600000 });
-            return res.apiSuccess({ data: sanitizedUser, message: "User Created Successfully" });
+            return res.apiSuccess({ data: {...sanitizedUser,token}, message: "User Created Successfully" });
         } catch (error) {
             return res.apiError({ message });
         }

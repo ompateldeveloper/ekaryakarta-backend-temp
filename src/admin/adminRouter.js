@@ -2,7 +2,8 @@ import AdminJS from "adminjs";
 import AdminJSExpress from "@adminjs/express";
 import { Database, Resource, getModelByName } from "@adminjs/prisma";
 import { PrismaClient } from "@prisma/client";
-
+import dotenv from "dotenv";
+dotenv.config();
 const prisma = new PrismaClient();
 
 AdminJS.registerAdapter({ Database, Resource });
@@ -13,13 +14,9 @@ const adminOptions = {
             resource: { model: getModelByName("User"), client: prisma },
             options: {},
         },
-        {
-            resource: { model: getModelByName("Role"), client: prisma },
-            options: {},
-        },
     ],
     branding: {
-        companyName: "Landglide",
+        companyName: "Backend Admin",
         logo: false,
     },
     withMadeWithLove: false,
